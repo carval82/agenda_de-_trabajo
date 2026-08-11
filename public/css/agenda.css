@@ -1,0 +1,444 @@
+:root {
+    --bg: #060b14;
+    --panel: rgba(15, 23, 42, 0.82);
+    --panel-border: rgba(148, 163, 184, 0.12);
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --blue: #3b82f6;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --lcdesign: #2563eb;
+    --intervereda: #059669;
+    --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    --radius: 18px;
+}
+
+* { box-sizing: border-box; }
+
+body.pda-body {
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    background:
+        radial-gradient(circle at 10% 10%, rgba(37, 99, 235, 0.18), transparent 28%),
+        radial-gradient(circle at 90% 0%, rgba(5, 150, 105, 0.16), transparent 24%),
+        linear-gradient(180deg, #04070f 0%, #060b14 40%, #0a101d 100%);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+body.pda-body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none;
+    mask-image: linear-gradient(180deg, rgba(0,0,0,0.65), transparent 85%);
+}
+
+.pda-shell { position: relative; z-index: 1; }
+
+.pda-header {
+    border-bottom: 1px solid var(--panel-border);
+    background: rgba(8, 13, 24, 0.78);
+    backdrop-filter: blur(16px);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+}
+
+.pda-brand-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--lcdesign), var(--intervereda));
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    box-shadow: 0 10px 30px rgba(37, 99, 235, 0.25);
+}
+
+.pda-clock {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+    padding: 8px 14px;
+    border-radius: 12px;
+    background: rgba(2, 6, 23, 0.75);
+    border: 1px solid var(--panel-border);
+    min-width: 110px;
+    text-align: center;
+}
+
+.pda-panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+}
+
+.pda-panel-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.pda-panel-title h2 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.pda-badge {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, 0.15);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.pda-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+@media (max-width: 1024px) {
+    .pda-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+    .pda-stat-grid { grid-template-columns: 1fr; }
+}
+
+.pda-stat {
+    padding: 16px 18px;
+    border-radius: 16px;
+    border: 1px solid var(--panel-border);
+    background: linear-gradient(180deg, rgba(15,23,42,0.95), rgba(8,13,24,0.85));
+}
+
+.pda-stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+}
+
+.pda-stat-value {
+    margin-top: 6px;
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.pda-company-card {
+    width: 100%;
+    text-align: left;
+    border-radius: 16px;
+    padding: 14px 16px;
+    border: 1px solid transparent;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.pda-company-card:hover { transform: translateY(-1px); }
+
+.pda-company-card.active {
+    box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+    border-color: rgba(255,255,255,0.12);
+}
+
+.pda-company-card.inactive { opacity: 0.45; }
+
+.pda-company-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.pda-upcoming-item {
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: rgba(2, 6, 23, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.pda-upcoming-item:hover {
+    border-color: rgba(148, 163, 184, 0.22);
+    transform: translateX(2px);
+}
+
+.pda-time-pill {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(245, 158, 11, 0.12);
+    color: #fcd34d;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    white-space: nowrap;
+}
+
+.pda-btn-primary {
+    width: 100%;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 18px;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    box-shadow: 0 14px 30px rgba(37, 99, 235, 0.28);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+}
+
+.pda-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 36px rgba(37, 99, 235, 0.34);
+}
+
+.pda-btn-ghost {
+    border-radius: 12px;
+    padding: 8px 14px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.pda-btn-ghost:hover { background: rgba(51, 65, 85, 0.85); }
+
+.pda-input,
+.pda-select,
+.pda-textarea {
+    width: 100%;
+    margin-top: 6px;
+    border-radius: 12px;
+    background: rgba(2, 6, 23, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    color: var(--text);
+    padding: 11px 14px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pda-input:focus,
+.pda-select:focus,
+.pda-textarea:focus {
+    border-color: rgba(59, 130, 246, 0.65);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.pda-label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+}
+
+.pda-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(2, 6, 23, 0.78);
+    backdrop-filter: blur(8px);
+}
+
+.pda-modal {
+    width: min(720px, 100%);
+    max-height: 90vh;
+    overflow: auto;
+    border-radius: 22px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: linear-gradient(180deg, rgba(15,23,42,0.98), rgba(8,13,24,0.98));
+    box-shadow: var(--shadow);
+    padding: 24px;
+}
+
+.pda-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--panel-border);
+}
+
+.pda-section {
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 16px;
+    background: rgba(2, 6, 23, 0.45);
+}
+
+.pda-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 12px;
+}
+
+.pda-chip {
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(30, 41, 59, 0.75);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pda-chip.active {
+    background: rgba(37, 99, 235, 0.22);
+    border-color: rgba(59, 130, 246, 0.45);
+    color: #dbeafe;
+}
+
+.pda-alert-conflict {
+    border-radius: 14px;
+    padding: 12px 14px;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    background: rgba(120, 53, 15, 0.28);
+    color: #fde68a;
+    font-size: 13px;
+    white-space: pre-line;
+}
+
+.pda-priority-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+}
+
+.pda-priority-low { background: #64748b; }
+.pda-priority-medium { background: #3b82f6; }
+.pda-priority-high { background: #f59e0b; }
+.pda-priority-urgent { background: #ef4444; }
+
+.pda-auth-wrap {
+    min-height: calc(100vh - 48px);
+    display: grid;
+    place-items: center;
+    padding: 24px;
+}
+
+.pda-auth-card {
+    width: min(980px, 100%);
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    overflow: hidden;
+    border-radius: 24px;
+    border: 1px solid var(--panel-border);
+    box-shadow: var(--shadow);
+    background: rgba(8, 13, 24, 0.92);
+}
+
+@media (max-width: 900px) {
+    .pda-auth-card { grid-template-columns: 1fr; }
+}
+
+.pda-auth-hero {
+    padding: 40px;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(37,99,235,0.25), transparent 35%),
+        radial-gradient(circle at 80% 10%, rgba(5,150,105,0.22), transparent 30%),
+        linear-gradient(160deg, rgba(15,23,42,0.95), rgba(8,13,24,0.98));
+    border-right: 1px solid var(--panel-border);
+}
+
+.pda-auth-form {
+    padding: 40px;
+}
+
+.pda-feature {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-top: 14px;
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
+.pda-feature-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: rgba(255,255,255,0.06);
+    flex-shrink: 0;
+}
+
+/* FullCalendar dark theme */
+#calendar .fc {
+    --fc-border-color: rgba(148, 163, 184, 0.12);
+    --fc-page-bg-color: transparent;
+    --fc-neutral-bg-color: rgba(15, 23, 42, 0.5);
+    --fc-list-event-hover-bg-color: rgba(59, 130, 246, 0.12);
+    --fc-today-bg-color: rgba(37, 99, 235, 0.08);
+    color: var(--text);
+}
+
+#calendar .fc-toolbar-title {
+    font-size: 1.15rem !important;
+    font-weight: 600;
+}
+
+#calendar .fc-button {
+    background: rgba(30, 41, 59, 0.9) !important;
+    border: 1px solid rgba(148, 163, 184, 0.18) !important;
+    color: var(--text) !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    text-transform: capitalize;
+}
+
+#calendar .fc-button:hover,
+#calendar .fc-button-active {
+    background: rgba(37, 99, 235, 0.25) !important;
+    border-color: rgba(59, 130, 246, 0.45) !important;
+}
+
+#calendar .fc-timegrid-slot-label,
+#calendar .fc-col-header-cell-cushion {
+    color: var(--muted);
+}
+
+#calendar .fc-event {
+    border-radius: 8px;
+    border: none;
+    padding: 2px 4px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+}
+
+#calendar .fc-now-indicator-arrow,
+#calendar .fc-now-indicator-line {
+    border-color: #f59e0b;
+}
+
+[x-cloak] { display: none !important; }
