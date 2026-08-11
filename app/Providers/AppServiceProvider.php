@@ -20,8 +20,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (env('DATABASE_URL') && ! env('DB_CONNECTION')) {
-            config(['database.default' => 'pgsql']);
+        if (env('DATABASE_URL')) {
+            config([
+                'database.default' => 'pgsql',
+                'database.connections.pgsql.url' => env('DATABASE_URL'),
+            ]);
         }
 
         if ($this->app->environment('production')) {

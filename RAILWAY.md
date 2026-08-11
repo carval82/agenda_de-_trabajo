@@ -15,10 +15,19 @@ Repositorio: [github.com/carval82/agenda_de-_trabajo](https://github.com/carval8
 
 ---
 
-## 2. Agregar PostgreSQL
+## 2. Agregar PostgreSQL y vincularlo
 
 1. En el proyecto → **+ New** → **Database** → **PostgreSQL**
-2. Railway crea automáticamente la variable `DATABASE_URL`
+2. Abre el servicio **Postgres** → pestaña **Connect** (o **Data**)
+3. Pulsa **Connect to service** y elige **agenda_de-_trabajo**
+   - Esto inyecta `DATABASE_URL` automáticamente en el servicio web
+4. Si no aparece Connect, en **Variables** del servicio web agrega manualmente:
+   ```env
+   DATABASE_URL=${{Postgres.DATABASE_URL}}
+   ```
+   > Si tu Postgres se llama `Postgres-CyS`, usa: `${{Postgres-CyS.DATABASE_URL}}`
+
+**Sin DATABASE_URL las migraciones corren en SQLite temporal y Postgres queda vacío.**
 
 ---
 
@@ -34,7 +43,7 @@ En **Variables** del servicio web, configura:
 | `APP_KEY` | Genera con `php artisan key:generate --show` en local |
 | `APP_URL` | `https://TU-DOMINIO.up.railway.app` |
 | `DB_CONNECTION` | `pgsql` |
-| `DATABASE_URL` | Referencia: `${{Postgres.DATABASE_URL}}` |
+| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` o referencia desde Connect |
 | `SESSION_DRIVER` | `database` |
 | `SESSION_SECURE_COOKIE` | `true` |
 | `CACHE_STORE` | `database` |
