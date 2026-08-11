@@ -11,26 +11,25 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        Company::insert([
+        Company::updateOrCreate(
+            ['slug' => 'lcdesign'],
             [
                 'name' => 'LC Design',
-                'slug' => 'lcdesign',
                 'type' => 'software',
                 'tagline' => 'Desarrollo de software',
                 'color' => '#2563eb',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+            ]
+        );
+
+        Company::updateOrCreate(
+            ['slug' => 'interveredanet'],
             [
                 'name' => 'Interveredanet.cr',
-                'slug' => 'interveredanet',
                 'type' => 'network',
                 'tagline' => 'Lo hacemos posible — Redes y conectividad',
                 'color' => '#059669',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+            ]
+        );
 
         User::updateOrCreate(
             ['email' => 'pcapacho24@gmail.com'],

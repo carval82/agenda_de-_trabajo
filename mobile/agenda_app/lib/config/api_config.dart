@@ -6,8 +6,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiConfig {
   static const _prefKey = 'api_base_url';
 
+  /// Producción Railway — cambia por tu dominio real
+  static const String railwayUrl = 'https://TU-APP.up.railway.app/api';
+
   /// Opciones comunes según dónde corres la app
   static const presets = <String, String>{
+    'Railway (producción)': railwayUrl,
     'Artisan (PC/emulador)': 'http://127.0.0.1:8000/api',
     'Artisan (Android emulador)': 'http://10.0.2.2:8000/api',
     'XAMPP local': 'http://127.0.0.1/agenda_de%20_trabajo/public/api',

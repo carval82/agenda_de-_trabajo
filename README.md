@@ -77,3 +77,15 @@ Configura la URL del API en `lib/config/api_config.dart`:
 
 1. **LC Design** — Desarrollo de software (`#2563eb`)
 2. **Interveredanet.cr** — Lo hacemos posible — Redes (`#059669`)
+
+## Despliegue en Railway
+
+Ver guía completa: **[RAILWAY.md](RAILWAY.md)**
+
+Resumen rápido:
+
+1. Conecta el repo [carval82/agenda_de-_trabajo](https://github.com/carval82/agenda_de-_trabajo) en Railway
+2. Agrega **PostgreSQL**
+3. Configura variables: `APP_KEY`, `APP_URL`, `DB_CONNECTION=pgsql`, `DATABASE_URL=${{Postgres.DATABASE_URL}}`
+4. Genera dominio público en Networking
+5. Ejecuta una vez: `php artisan db:seed --force`
