@@ -224,8 +224,9 @@ function agendaApp() {
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
                 },
-                slotMinTime: '06:00:00',
-                slotMaxTime: '22:00:00',
+                slotMinTime: '00:00:00',
+                slotMaxTime: '23:59:00',
+                timeZone: 'local',
                 allDaySlot: false,
                 height: 'auto',
                 nowIndicator: true,

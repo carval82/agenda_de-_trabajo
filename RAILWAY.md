@@ -42,6 +42,7 @@ En **Variables** del servicio web, configura:
 | `APP_DEBUG` | `false` |
 | `APP_KEY` | Genera con `php artisan key:generate --show` en local |
 | `APP_URL` | `https://TU-DOMINIO.up.railway.app` |
+| `APP_TIMEZONE` | `America/Bogota` |
 | `DB_CONNECTION` | `pgsql` |
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` o referencia desde Connect |
 | `SESSION_DRIVER` | `database` |

@@ -104,8 +104,8 @@ class ApiService {
       Uri.parse('${ApiConfig.baseUrl}/commitments/check-conflict'),
       headers: _headers,
       body: jsonEncode({
-        'starts_at': start.toIso8601String(),
-        'ends_at': end.toIso8601String(),
+        'starts_at': start.toUtc().toIso8601String(),
+        'ends_at': end.toUtc().toIso8601String(),
         if (excludeId != null) 'exclude_id': excludeId,
       }),
     );

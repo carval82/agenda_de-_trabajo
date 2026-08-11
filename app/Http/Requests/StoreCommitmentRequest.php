@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -10,6 +11,30 @@ class StoreCommitmentRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'starts_at' => $this->normalizeDateTime($this->input('starts_at')),
+            'ends_at' => $this->normalizeDateTime($this->input('ends_at')),
+        ]);
+    }
+
+    private function normalizeDateTime(?string $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        $hasOffset = str_ends_with($value, 'Z')
+            || preg_match('/[+-]\d{2}:\d{2}$/', $value);
+
+        $carbon = $hasOffset
+            ? Carbon::parse($value)
+            : Carbon::parse($value, config('app.timezone'));
+
+        return $carbon->utc()->toIso8601String();
     }
 
     public function rules(): array
