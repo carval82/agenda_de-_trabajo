@@ -1,13 +1,10 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiConfig {
   static const _prefKey = 'api_base_url';
 
-  /// Producción Railway — cambia por tu dominio real
-  static const String railwayUrl = 'https://TU-APP.up.railway.app/api';
+  /// Producción Railway
+  static const String railwayUrl = 'https://agendade-trabajo-production.up.railway.app/api';
 
   /// Opciones comunes según dónde corres la app
   static const presets = <String, String>{
@@ -22,15 +19,8 @@ class ApiConfig {
   static String get baseUrl => _baseUrl;
 
   static String _defaultForPlatform() {
-    if (kIsWeb) return 'http://127.0.0.1:8000/api';
-
-    if (Platform.isAndroid) {
-      // En emulador Android 10.0.2.2 = localhost del PC
-      return 'http://10.0.2.2:8000/api';
-    }
-
-    // Windows, macOS, Linux, iOS simulator
-    return 'http://127.0.0.1:8000/api';
+    // Producción en Railway; usa presets en ConnectionScreen para desarrollo local
+    return railwayUrl;
   }
 
   static Future<void> init() async {

@@ -7,6 +7,7 @@
     <title>@yield('title', 'Agenda de Trabajo') — LC Design & Interveredanet</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{{ asset('image/logo_app2.png') }}">
     <link rel="stylesheet" href="{{ asset('css/agenda.css') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -18,8 +19,8 @@
     <header class="pda-header">
         <div class="max-w-[1400px] mx-auto px-4 py-3 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3 min-w-0">
-                <div class="pda-brand-badge shrink-0">PDA</div>
-                <div class="min-w-0">
+                <img src="{{ asset('image/logo_app2.png') }}" alt="PDA Agenda de Trabajo" class="pda-brand-logo pda-brand-logo--compact shrink-0">
+                <div class="min-w-0 hidden sm:block">
                     <h1 class="font-semibold leading-tight truncate">Agenda de Trabajo</h1>
                     <p class="text-xs text-slate-400 truncate">LC Design · Interveredanet.cr</p>
                 </div>

@@ -183,6 +183,13 @@ class CommitmentController extends Controller
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
             'exclude_id' => ['nullable', 'integer'],
+        ], [
+            'starts_at.required' => 'Indica la fecha y hora de inicio.',
+            'ends_at.required' => 'Indica la fecha y hora de fin.',
+            'ends_at.after' => 'La hora de fin debe ser posterior al inicio.',
+        ], [
+            'starts_at' => 'fecha de inicio',
+            'ends_at' => 'fecha de fin',
         ]);
 
         $conflicts = $this->conflictService->findConflicts(

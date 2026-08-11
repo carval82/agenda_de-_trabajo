@@ -6,7 +6,7 @@
 <div class="pda-auth-card" style="max-width:520px">
     <div class="pda-auth-form" style="grid-column: 1 / -1">
         <div class="text-center mb-8">
-            <div class="pda-brand-badge mx-auto mb-4" style="width:56px;height:56px;font-size:13px">PDA</div>
+            <img src="{{ asset('image/logo_app2.png') }}" alt="PDA Agenda de Trabajo" class="pda-brand-logo pda-brand-logo--compact mx-auto mb-4">
             <h3 class="text-2xl font-semibold">Crear cuenta</h3>
             <p class="text-sm text-slate-400 mt-2">Empieza a organizar tus trabajos hoy</p>
         </div>

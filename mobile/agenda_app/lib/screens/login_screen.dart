@@ -45,15 +45,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: Column(
                   children: [
-                    const PdaLogo(),
-                    const SizedBox(height: 24),
-                    const Text('Agenda de Trabajo', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'LC Design · Interveredanet.cr',
-                      style: TextStyle(color: AppColors.muted),
-                    ),
-                    const SizedBox(height: 28),
+                    const AppLogo(variant: AppLogoVariant.hero, height: 200),
+                    const SizedBox(height: 12),
+                    const AppLogo(variant: AppLogoVariant.compact, height: 44),
+                    const SizedBox(height: 20),
                     Container(
                       padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(

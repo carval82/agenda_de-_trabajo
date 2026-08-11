@@ -62,6 +62,37 @@ body.pda-body::before {
     box-shadow: 0 10px 30px rgba(37, 99, 235, 0.25);
 }
 
+.pda-brand-logo {
+    display: block;
+    object-fit: contain;
+    user-select: none;
+}
+
+.pda-brand-logo--hero {
+    width: min(300px, 100%);
+    max-height: 240px;
+    margin-bottom: 0.75rem;
+    filter: drop-shadow(0 18px 36px rgba(0, 0, 0, 0.45));
+}
+
+.pda-brand-logo--compact {
+    height: 44px;
+    width: auto;
+    max-width: 200px;
+}
+
+.pda-brand-logo--compact-sm {
+    height: 36px;
+    max-width: 160px;
+}
+
+.pda-brand-logo--auth-strip {
+    height: 38px;
+    max-width: 220px;
+    margin-bottom: 1.25rem;
+    opacity: 0.95;
+}
+
 .pda-clock {
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.04em;

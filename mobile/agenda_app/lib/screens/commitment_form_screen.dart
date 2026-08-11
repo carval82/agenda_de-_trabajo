@@ -17,6 +17,7 @@ class CommitmentFormScreen extends StatefulWidget {
 }
 
 class _CommitmentFormScreenState extends State<CommitmentFormScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _description = TextEditingController();
   final _location = TextEditingController();
@@ -132,11 +133,26 @@ class _CommitmentFormScreenState extends State<CommitmentFormScreen> {
             ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _section('Información', [
-            TextField(controller: _title, decoration: const InputDecoration(labelText: 'Título del trabajo')),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _section('Información', [
+              TextFormField(
+                controller: _title,
+                decoration: const InputDecoration(
+                  labelText: 'Título del trabajo *',
+                  hintText: 'Ej: Reubicación antena Starlink',
+                ),
+                textCapitalization: TextCapitalization.sentences,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'El título del trabajo es obligatorio';
+                  }
+                  return null;
+                },
+              ),
             const SizedBox(height: 12),
             DropdownButtonFormField<int>(
               value: _companyId,
@@ -201,6 +217,9 @@ class _CommitmentFormScreenState extends State<CommitmentFormScreen> {
             onPressed: provider.loading || _companyId == null || _start == null || _end == null
                 ? null
                 : () async {
+                    setState(() => _conflict = null);
+                    if (!_formKey.currentState!.validate()) return;
+
                     final commitment = Commitment(
                       id: widget.existing?.id ?? 0,
                       companyId: _companyId!,
@@ -225,6 +244,7 @@ class _CommitmentFormScreenState extends State<CommitmentFormScreen> {
             child: Text(provider.loading ? 'Guardando...' : 'Guardar compromiso'),
           ),
         ],
+        ),
       ),
     );
   }

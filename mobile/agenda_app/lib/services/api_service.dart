@@ -152,9 +152,33 @@ class ApiService {
       return body;
     }
 
-    final message = body is Map<String, dynamic>
-        ? (body['message'] as String? ?? 'Error de API')
-        : 'Error de API';
-    throw ApiException(message, statusCode: response.statusCode);
+    if (body is Map<String, dynamic>) {
+      final errors = body['errors'];
+      if (errors is Map<String, dynamic>) {
+        final messages = errors.values
+            .expand((value) => value is List ? value : [value])
+            .map((value) => value.toString())
+            .where((message) => message.isNotEmpty && message != 'validation.required')
+            .toList();
+
+        if (messages.isNotEmpty) {
+          throw ApiException(messages.join('\n'), statusCode: response.statusCode);
+        }
+      }
+
+      final message = _humanizeMessage(body['message'] as String? ?? 'Error de API');
+      throw ApiException(message, statusCode: response.statusCode);
+    }
+
+    throw ApiException('Error de API', statusCode: response.statusCode);
+  }
+
+  String _humanizeMessage(String message) {
+    const known = {
+      'validation.required': 'Completa los campos obligatorios.',
+      'The given data was invalid.': 'Revisa los datos del formulario.',
+    };
+
+    return known[message] ?? message;
   }
 }

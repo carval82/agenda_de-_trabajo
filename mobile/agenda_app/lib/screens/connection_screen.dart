@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../config/api_config.dart';
 import '../services/connection_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ui_widgets.dart';
 
 class ConnectionScreen extends StatefulWidget {
   const ConnectionScreen({super.key, required this.onConnected});
@@ -57,7 +58,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
               constraints: const BoxConstraints(maxWidth: 420),
               child: Column(
                 children: [
-                  const Text('📡', style: TextStyle(fontSize: 64)),
+                  const AppLogo(variant: AppLogoVariant.hero, height: 160),
                   const SizedBox(height: 16),
                   Text(
                     'Sin conexión',

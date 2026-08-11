@@ -92,7 +92,7 @@ class _SplashGateState extends State<SplashGate> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            PdaLogo(size: 64),
+            PdaLogo(size: 180, variant: AppLogoVariant.hero),
             SizedBox(height: 20),
             CircularProgressIndicator(),
           ],

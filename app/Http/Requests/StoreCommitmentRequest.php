@@ -33,7 +33,31 @@ class StoreCommitmentRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'company_id.required' => 'Selecciona una empresa.',
+            'company_id.exists' => 'La empresa seleccionada no es válida.',
+            'title.required' => 'El título del trabajo es obligatorio.',
+            'title.max' => 'El título no puede superar 255 caracteres.',
+            'starts_at.required' => 'Indica la fecha y hora de inicio.',
+            'starts_at.date' => 'La fecha de inicio no es válida.',
+            'ends_at.required' => 'Indica la fecha y hora de fin.',
+            'ends_at.date' => 'La fecha de fin no es válida.',
             'ends_at.after' => 'La hora de fin debe ser posterior al inicio.',
+            'priority.required' => 'Selecciona una prioridad.',
+            'priority.in' => 'La prioridad seleccionada no es válida.',
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'company_id' => 'empresa',
+            'title' => 'título del trabajo',
+            'starts_at' => 'fecha de inicio',
+            'ends_at' => 'fecha de fin',
+            'priority' => 'prioridad',
+            'client_name' => 'cliente',
+            'location' => 'ubicación',
+            'description' => 'descripción',
         ];
     }
 }

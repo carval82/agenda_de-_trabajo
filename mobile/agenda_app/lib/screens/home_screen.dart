@@ -36,13 +36,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            const Text('Agenda PDA'),
-            Text(DateFormat('EEEE d MMMM', 'es').format(DateTime.now()), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+            const AppLogo(variant: AppLogoVariant.compact, height: 36),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Agenda PDA', style: TextStyle(fontSize: 16)),
+                  Text(
+                    DateFormat('EEEE d MMMM', 'es').format(DateTime.now()),
+                    style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
+        titleSpacing: 16,
         actions: [
           IconButton(
             tooltip: 'Actualizar',

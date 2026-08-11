@@ -5,7 +5,8 @@
 @section('content')
 <div class="pda-auth-card">
     <div class="pda-auth-hero">
-        <div class="pda-brand-badge mb-6" style="width:56px;height:56px;font-size:13px">PDA</div>
+        <img src="{{ asset('image/logo_app.png') }}" alt="PDA Agenda de Trabajo" class="pda-brand-logo pda-brand-logo--hero">
+        <img src="{{ asset('image/logo_app2.png') }}" alt="PDA" class="pda-brand-logo pda-brand-logo--compact pda-brand-logo--auth-strip">
         <h2 class="text-3xl font-bold leading-tight">Tu agenda inteligente</h2>
         <p class="text-slate-400 mt-3 max-w-md">Organiza trabajos de desarrollo y redes sin que se crucen. Recordatorios automáticos, estilo asistente personal.</p>
 

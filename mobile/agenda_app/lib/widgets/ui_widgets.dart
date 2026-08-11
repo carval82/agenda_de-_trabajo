@@ -103,22 +103,64 @@ class SectionHeader extends StatelessWidget {
 }
 
 class PdaLogo extends StatelessWidget {
-  const PdaLogo({super.key, this.size = 72});
+  const PdaLogo({
+    super.key,
+    this.size = 72,
+    this.variant = AppLogoVariant.compact,
+  });
 
   final double size;
+  final AppLogoVariant variant;
 
   @override
   Widget build(BuildContext context) {
+    return AppLogo(variant: variant, height: size);
+  }
+}
+
+enum AppLogoVariant { hero, compact }
+
+class AppLogo extends StatelessWidget {
+  const AppLogo({
+    super.key,
+    this.variant = AppLogoVariant.compact,
+    this.height,
+    this.width,
+  });
+
+  final AppLogoVariant variant;
+  final double? height;
+  final double? width;
+
+  static const heroAsset = 'assets/images/logo_app.png';
+  static const compactAsset = 'assets/images/logo_app2.png';
+
+  String get asset => variant == AppLogoVariant.hero ? heroAsset : compactAsset;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolvedHeight = height ?? (variant == AppLogoVariant.hero ? 220.0 : 52.0);
+
+    return Image.asset(
+      asset,
+      height: resolvedHeight,
+      width: width,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      errorBuilder: (_, __, ___) => _fallback(resolvedHeight),
+    );
+  }
+
+  Widget _fallback(double h) {
     return Container(
-      width: size,
-      height: size,
+      width: h,
+      height: h,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(size * 0.28),
+        borderRadius: BorderRadius.circular(h * 0.28),
         gradient: const LinearGradient(colors: [AppColors.lcdesign, AppColors.intervereda]),
-        boxShadow: [BoxShadow(color: AppColors.lcdesign.withOpacity(0.35), blurRadius: 24, offset: const Offset(0, 10))],
       ),
       alignment: Alignment.center,
-      child: Text('PDA', style: TextStyle(fontWeight: FontWeight.w800, fontSize: size * 0.24, letterSpacing: 1.5)),
+      child: Text('PDA', style: TextStyle(fontWeight: FontWeight.w800, fontSize: h * 0.24, letterSpacing: 1.5)),
     );
   }
 }
