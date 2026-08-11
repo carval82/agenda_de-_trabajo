@@ -1,3 +1,6 @@
+# Solo PHP — evita que Nixpacks ejecute npm run build
+providers = ["php"]
+
 [phases.setup]
 nixPkgs = [
   "php82",
@@ -20,6 +23,10 @@ nixPkgs = [
 
 [phases.install]
 cmds = ["composer install --no-dev --optimize-autoloader --no-interaction"]
+
+# La UI web usa Tailwind/FullCalendar por CDN — no requiere Node/npm
+[phases.build]
+cmds = ["echo 'Skip npm build: frontend served via CDN'"]
 
 [start]
 cmd = "sh scripts/start-railway.sh"

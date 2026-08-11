@@ -1,5 +1,6 @@
 [build]
 builder = "nixpacks"
+buildCommand = "composer install --no-dev --optimize-autoloader --no-interaction"
 
 [deploy]
 startCommand = "sh scripts/start-railway.sh"
