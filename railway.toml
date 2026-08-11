@@ -3,7 +3,8 @@ builder = "nixpacks"
 buildCommand = "composer install --no-dev --optimize-autoloader --no-interaction"
 
 [deploy]
+preDeployCommand = "sh scripts/railway-db-setup.sh"
 startCommand = "sh scripts/start-railway.sh"
-healthcheckPath = "/up"
+healthcheckPath = "/api/health"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"

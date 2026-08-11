@@ -3,9 +3,28 @@
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\CompanyApiController;
 use App\Http\Controllers\CommitmentController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/health', fn () => response()->json(['ok' => true]));
+Route::get('/health', function () {
+    try {
+        DB::connection()->getPdo();
+        $driver = DB::connection()->getDriverName();
+        $tables = DB::select("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'");
+
+        return response()->json([
+            'ok' => true,
+            'database' => $driver,
+            'tables' => count($tables),
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'ok' => false,
+            'error' => 'Sin conexion a base de datos',
+            'hint' => 'Vincula DATABASE_URL desde Postgres--CyS al servicio web',
+        ], 503);
+    }
+});
 
 Route::post('/login', [AuthApiController::class, 'login']);
 
