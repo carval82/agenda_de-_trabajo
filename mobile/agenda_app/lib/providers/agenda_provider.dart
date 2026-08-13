@@ -157,4 +157,46 @@ class AgendaProvider extends ChangeNotifier {
     await ReminderService.instance.cancelForCommitment(id);
     await loadData();
   }
+
+  Future<String?> setStatus(int id, String status) async {
+    loading = true;
+    error = null;
+    notifyListeners();
+
+    try {
+      final saved = await _api.updateStatus(id, status);
+      if (status == 'completed' || status == 'cancelled') {
+        await ReminderService.instance.cancelForCommitment(id);
+      } else {
+        await ReminderService.instance.scheduleForCommitment(saved);
+      }
+      await loadData();
+      return null;
+    } catch (e) {
+      error = e.toString();
+      return error;
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> postponeCommitment(Commitment event, DateTime newStart, DateTime newEnd) async {
+    loading = true;
+    error = null;
+    notifyListeners();
+
+    try {
+      final saved = await _api.postponeCommitment(event.id, newStart, newEnd);
+      await ReminderService.instance.scheduleForCommitment(saved);
+      await loadData();
+      return null;
+    } catch (e) {
+      error = e.toString();
+      return error;
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
 }

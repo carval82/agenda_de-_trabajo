@@ -194,6 +194,7 @@ function agendaApp() {
         saving: false,
         conflictMessage: '',
         allEvents: [],
+        lastUpcoming: [],
         stats: { today: 0, week: 0, lcdesign: 0, intervereda: 0 },
         selectedCompanies: @json($companies->pluck('id')),
         companySlugs: @json($companies->pluck('slug', 'id')),
@@ -312,14 +313,61 @@ function agendaApp() {
             return { low: 'Baja', medium: 'Media', high: 'Alta', urgent: 'Urgente' }[p] || p;
         },
 
-        timeUntil(dateStr) {
+        timeUntil(dateStr, status = 'scheduled') {
+            if (status === 'in_progress') return 'En curso';
+            if (status === 'completed') return 'Completado';
+            if (status === 'cancelled') return 'Cancelado';
             const diff = new Date(dateStr) - new Date();
-            if (diff < 0) return 'En curso';
+            if (diff < 0) return '¡Ahora!';
             const mins = Math.floor(diff / 60000);
             if (mins < 60) return `En ${mins} min`;
             const hrs = Math.floor(mins / 60);
             if (hrs < 24) return `En ${hrs} h`;
             return `En ${Math.floor(hrs / 24)} d`;
+        },
+
+        statusLabel(status) {
+            return { scheduled: 'Programado', in_progress: 'En curso', completed: 'Completado', cancelled: 'Cancelado' }[status] || status;
+        },
+
+        async setStatus(id, status) {
+            const res = await fetch(`/commitments/${id}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ status }),
+            });
+            const data = await res.json();
+            if (!res.ok) { alert(data.message || 'Error'); return; }
+            this.calendar.refetchEvents();
+            this.loadUpcoming();
+        },
+
+        async postponeQuick(id, hours = 1) {
+            const item = this.lastUpcoming.find(e => Number(e.id) === Number(id));
+            if (!item) return;
+            const start = new Date();
+            start.setHours(start.getHours() + hours, 0, 0, 0);
+            const end = new Date(start.getTime() + (new Date(item.end) - new Date(item.start)));
+            const res = await fetch(`/commitments/${id}/postpone`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    starts_at: this.toLocalInput(start),
+                    ends_at: this.toLocalInput(end),
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) { alert(data.message || 'Conflicto de horario'); return; }
+            this.calendar.refetchEvents();
+            this.loadUpcoming();
         },
 
         openCreate(start = null, end = null) {
@@ -448,6 +496,7 @@ function agendaApp() {
                 return;
             }
             const items = await res.json();
+            this.lastUpcoming = items;
             if (!items.length) {
                 container.innerHTML = '<div class="text-center py-8"><div class="text-3xl mb-2">📋</div><p class="text-sm text-slate-500">Sin compromisos próximos.<br>¡Agenda tu primer trabajo!</p></div>';
                 return;
@@ -459,14 +508,23 @@ function agendaApp() {
                             <span class="w-2.5 h-2.5 mt-1.5 rounded-full shrink-0" style="background:${item.company.color}"></span>
                             <div class="min-w-0">
                                 <div class="font-medium text-sm truncate">${item.title}</div>
-                                <div class="text-xs text-slate-400">${item.company.name}</div>
+                                <div class="text-xs text-slate-400">${item.company.name} · ${this.statusLabel(item.status)}</div>
                                 <div class="text-xs text-slate-500 mt-1">${new Date(item.starts_at).toLocaleString('es-CR', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</div>
                             </div>
                         </div>
-                        <span class="pda-time-pill">${this.timeUntil(item.starts_at)}</span>
+                        <span class="pda-time-pill">${this.timeUntil(item.starts_at, item.status)}</span>
                     </div>
+                    ${item.status !== 'completed' && item.status !== 'cancelled' ? `
+                    <div class="pda-action-row">
+                        ${item.status !== 'in_progress' ? `<button type="button" class="pda-action-btn pda-action-start" onclick="window.__agendaSetStatus(${item.id}, 'in_progress')">▶ Iniciar</button>` : ''}
+                        ${item.status === 'in_progress' ? `<button type="button" class="pda-action-btn pda-action-done" onclick="window.__agendaSetStatus(${item.id}, 'completed')">✓ Completar</button>` : ''}
+                        <button type="button" class="pda-action-btn pda-action-postpone" onclick="window.__agendaPostpone(${item.id})">⏱ Aplazar</button>
+                        <button type="button" class="pda-action-btn pda-action-cancel" onclick="window.__agendaSetStatus(${item.id}, 'cancelled')">✕</button>
+                    </div>` : ''}
                 </div>
             `).join('');
+            window.__agendaSetStatus = (id, status) => this.setStatus(id, status);
+            window.__agendaPostpone = (id) => this.postponeQuick(id, 1);
         },
     }
 }

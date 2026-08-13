@@ -145,6 +145,29 @@ class ApiService {
     _decode(response);
   }
 
+  Future<Commitment> updateStatus(int id, String status) async {
+    final response = await _client.patch(
+      Uri.parse('${ApiConfig.baseUrl}/commitments/$id/status'),
+      headers: _headers,
+      body: jsonEncode({'status': status}),
+    );
+    final data = _decode(response) as Map<String, dynamic>;
+    return Commitment.fromJson(data['commitment'] as Map<String, dynamic>);
+  }
+
+  Future<Commitment> postponeCommitment(int id, DateTime start, DateTime end) async {
+    final response = await _client.post(
+      Uri.parse('${ApiConfig.baseUrl}/commitments/$id/postpone'),
+      headers: _headers,
+      body: jsonEncode({
+        'starts_at': start.toUtc().toIso8601String(),
+        'ends_at': end.toUtc().toIso8601String(),
+      }),
+    );
+    final data = _decode(response) as Map<String, dynamic>;
+    return Commitment.fromJson(data['commitment'] as Map<String, dynamic>);
+  }
+
   dynamic _decode(http.Response response) {
     final body = response.body.isEmpty ? {} : jsonDecode(response.body);
 

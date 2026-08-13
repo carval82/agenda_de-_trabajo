@@ -41,5 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/commitments/{commitment}', [CommitmentController::class, 'show']);
     Route::post('/commitments', [CommitmentController::class, 'store']);
     Route::put('/commitments/{commitment}', [CommitmentController::class, 'update']);
+    Route::patch('/commitments/{commitment}/status', [CommitmentController::class, 'updateStatus']);
+    Route::post('/commitments/{commitment}/postpone', [CommitmentController::class, 'postpone']);
     Route::delete('/commitments/{commitment}', [CommitmentController::class, 'destroy']);
 });

@@ -20,5 +20,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/agenda/check-conflict', [CommitmentController::class, 'checkConflict'])->name('agenda.check-conflict');
     Route::post('/commitments', [CommitmentController::class, 'store'])->name('commitments.store');
     Route::put('/commitments/{commitment}', [CommitmentController::class, 'update'])->name('commitments.update');
+    Route::patch('/commitments/{commitment}/status', [CommitmentController::class, 'updateStatus'])->name('commitments.status');
+    Route::post('/commitments/{commitment}/postpone', [CommitmentController::class, 'postpone'])->name('commitments.postpone');
     Route::delete('/commitments/{commitment}', [CommitmentController::class, 'destroy'])->name('commitments.destroy');
 });

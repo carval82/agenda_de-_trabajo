@@ -1,7 +1,7 @@
 name: agenda_trabajo
 description: Agenda de trabajo PDA — LC Design e Interveredanet.cr
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.1.0+5
 
 environment:
   sdk: ^3.5.4
@@ -22,6 +22,25 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.4
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/logo_app2.png
+  adaptive_icon_background: "#060B14"
+  adaptive_icon_foreground: assets/images/logo_app2.png
+
+flutter_native_splash:
+  color: "#060B14"
+  image: assets/images/logo_app.png
+  android_12:
+    color: "#060B14"
+    image: assets/images/logo_app.png
+  android: true
+  ios: true
+  web: false
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

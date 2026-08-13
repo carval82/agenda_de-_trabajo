@@ -51,14 +51,21 @@ class Commitment extends Model
 
     public function toCalendarEvent(): array
     {
+        $color = $this->company->color;
+        if ($this->status === 'in_progress') {
+            $color = '#f59e0b';
+        } elseif ($this->status === 'completed') {
+            $color = '#64748b';
+        }
+
         return [
             'id' => $this->id,
             'title' => $this->title,
             'start' => $this->starts_at->toIso8601String(),
             'end' => $this->ends_at->toIso8601String(),
             'allDay' => $this->all_day,
-            'backgroundColor' => $this->company->color,
-            'borderColor' => $this->company->color,
+            'backgroundColor' => $color,
+            'borderColor' => $color,
             'extendedProps' => [
                 'company_id' => $this->company_id,
                 'company' => $this->company->name,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../models/models.dart';
+
 class AppColors {
   static const bg = Color(0xFF060B14);
   static const panel = Color(0xFF0F172A);
@@ -97,8 +99,57 @@ Color priorityColor(String priority) {
 
 String timeUntil(DateTime date) {
   final diff = date.difference(DateTime.now());
-  if (diff.isNegative) return 'En curso';
+  if (diff.isNegative) return 'Ahora';
   if (diff.inMinutes < 60) return 'En ${diff.inMinutes} min';
   if (diff.inHours < 24) return 'En ${diff.inHours} h';
   return 'En ${diff.inDays} d';
+}
+
+String statusLabel(String status) {
+  switch (status) {
+    case 'in_progress':
+      return 'En curso';
+    case 'completed':
+      return 'Completado';
+    case 'cancelled':
+      return 'Cancelado';
+    default:
+      return 'Programado';
+  }
+}
+
+Color statusColor(String status) {
+  switch (status) {
+    case 'in_progress':
+      return AppColors.intervereda;
+    case 'completed':
+      return AppColors.muted;
+    case 'cancelled':
+      return Colors.redAccent;
+    default:
+      return AppColors.lcdesign;
+  }
+}
+
+String commitmentBadge(Commitment event) {
+  if (event.status == 'in_progress') return 'En curso';
+  if (event.status == 'completed') return 'Completado';
+  if (event.status == 'cancelled') return 'Cancelado';
+
+  final now = DateTime.now();
+  if (now.isAfter(event.startsAt) && now.isBefore(event.endsAt)) {
+    return '¡Ahora!';
+  }
+  return timeUntil(event.startsAt);
+}
+
+Color commitmentBadgeColor(Commitment event) {
+  if (event.status == 'in_progress') return AppColors.intervereda;
+  if (event.status == 'completed') return AppColors.muted;
+
+  final now = DateTime.now();
+  if (now.isAfter(event.startsAt) && now.isBefore(event.endsAt)) {
+    return AppColors.amber;
+  }
+  return AppColors.lcdesign;
 }

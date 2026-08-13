@@ -371,6 +371,32 @@ body.pda-body::before {
 .pda-priority-high { background: #f59e0b; }
 .pda-priority-urgent { background: #ef4444; }
 
+.pda-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--panel-border);
+}
+
+.pda-action-btn {
+    border: 1px solid var(--panel-border);
+    background: rgba(30, 41, 59, 0.75);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pda-action-btn:hover { filter: brightness(1.15); }
+.pda-action-start { border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; }
+.pda-action-done { border-color: rgba(59, 130, 246, 0.4); color: #93c5fd; }
+.pda-action-postpone { border-color: rgba(245, 158, 11, 0.4); color: #fcd34d; }
+.pda-action-cancel { border-color: rgba(239, 68, 68, 0.35); color: #fca5a5; }
+
 .pda-auth-wrap {
     min-height: calc(100vh - 48px);
     display: grid;

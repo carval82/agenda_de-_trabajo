@@ -5,6 +5,7 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../models/models.dart';
 import '../providers/agenda_provider.dart';
+import '../services/reminder_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/event_card.dart';
 import '../widgets/ui_widgets.dart';
@@ -21,6 +22,14 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ReminderService.instance.requestPermissions();
+    });
+  }
 
   int _countToday(List<Commitment> events) {
     final now = DateTime.now();
@@ -56,6 +65,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         titleSpacing: 16,
         actions: [
+          IconButton(
+            tooltip: 'Probar alarma',
+            onPressed: () => ReminderService.instance.showTestNotification(),
+            icon: const Icon(Icons.notifications_active_outlined),
+          ),
           IconButton(
             tooltip: 'Actualizar',
             onPressed: provider.loading ? null : provider.loadData,
