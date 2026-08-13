@@ -3,10 +3,13 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../main.dart' show navigatorKey;
 import '../models/models.dart';
 import '../providers/agenda_provider.dart';
+import '../services/pda_assistant_service.dart';
 import '../services/reminder_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/assistant_panel.dart';
 import '../widgets/event_card.dart';
 import '../widgets/ui_widgets.dart';
 import 'commitment_form_screen.dart';
@@ -19,29 +22,57 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
+  bool _briefingDone = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await ReminderService.instance.requestPermissions();
-    });
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _setupAssistant());
   }
 
-  int _countToday(List<Commitment> events) {
-    final now = DateTime.now();
-    return events.where((e) =>
-        e.startsAt.year == now.year && e.startsAt.month == now.month && e.startsAt.day == now.day).length;
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    PdaAssistantService.instance.stopWatching();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      PdaAssistantService.instance.startWatching();
+    } else if (state == AppLifecycleState.paused) {
+      PdaAssistantService.instance.stopWatching();
+    }
+  }
+
+  Future<void> _setupAssistant() async {
+    await ReminderService.instance.requestPermissions();
+    final provider = context.read<AgendaProvider>();
+
+    PdaAssistantService.instance.attach(
+      navigatorKey: navigatorKey,
+      onAction: (id, action) => provider.handleAssistantAction(id, action),
+    );
+
+    if (!_briefingDone && mounted) {
+      _briefingDone = true;
+      final today = provider.todayAgenda();
+      await PdaAssistantService.instance.dailyBriefing(today);
+    }
+
+    PdaAssistantService.instance.startWatching();
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AgendaProvider>();
     final dayEvents = provider.eventsForDay(_selectedDay);
-    final visibleUpcoming = provider.upcoming.where((e) => provider.visibleCompanies.contains(e.companyId)).take(8);
+    final todayAgenda = provider.todayAgenda();
 
     return Scaffold(
       appBar: AppBar(
@@ -53,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Agenda PDA', style: TextStyle(fontSize: 16)),
+                  const Text('Asistente PDA', style: TextStyle(fontSize: 16)),
                   Text(
                     DateFormat('EEEE d MMMM', 'es').format(DateTime.now()),
                     style: const TextStyle(fontSize: 11, color: AppColors.muted),
@@ -66,9 +97,9 @@ class _HomeScreenState extends State<HomeScreen> {
         titleSpacing: 16,
         actions: [
           IconButton(
-            tooltip: 'Probar alarma',
-            onPressed: () => ReminderService.instance.showTestNotification(),
-            icon: const Icon(Icons.notifications_active_outlined),
+            tooltip: 'Escuchar mi día',
+            onPressed: () => PdaAssistantService.instance.dailyBriefing(todayAgenda),
+            icon: const Icon(Icons.volume_up_rounded),
           ),
           IconButton(
             tooltip: 'Actualizar',
@@ -77,6 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             onPressed: () async {
+              PdaAssistantService.instance.stopWatching();
               await provider.logout();
               if (context.mounted) {
                 Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
@@ -100,14 +132,11 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  Row(
-                    children: [
-                      Expanded(child: StatCard(label: 'Hoy', value: '${_countToday(provider.calendarEvents)}', color: AppColors.lcdesign)),
-                      const SizedBox(width: 10),
-                      Expanded(child: StatCard(label: 'Próximos', value: '${provider.upcoming.length}', color: AppColors.intervereda)),
-                    ],
+                  AssistantPanel(
+                    todayEvents: todayAgenda,
+                    onSpeakDay: () => PdaAssistantService.instance.dailyBriefing(todayAgenda),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   Wrap(
                     spacing: 10,
                     runSpacing: 10,
@@ -139,18 +168,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           _focusedDay = focused;
                         }),
                         eventLoader: provider.eventsForDay,
-                        calendarStyle: CalendarStyle(
-                          todayDecoration: const BoxDecoration(color: AppColors.lcdesign, shape: BoxShape.circle),
-                          selectedDecoration: const BoxDecoration(color: AppColors.intervereda, shape: BoxShape.circle),
-                          markerDecoration: const BoxDecoration(color: AppColors.amber, shape: BoxShape.circle),
-                          weekendTextStyle: const TextStyle(color: Color(0xFFFCA5A5)),
+                        calendarStyle: const CalendarStyle(
+                          todayDecoration: BoxDecoration(color: AppColors.lcdesign, shape: BoxShape.circle),
+                          selectedDecoration: BoxDecoration(color: AppColors.intervereda, shape: BoxShape.circle),
+                          markerDecoration: BoxDecoration(color: AppColors.amber, shape: BoxShape.circle),
+                          weekendTextStyle: TextStyle(color: Color(0xFFFCA5A5)),
                         ),
                         headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
                       ),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  SectionHeader(title: 'Día seleccionado', badge: DateFormat('d MMM', 'es').format(_selectedDay)),
+                  SectionHeader(title: 'Detalle del día', badge: DateFormat('d MMM', 'es').format(_selectedDay)),
                   const SizedBox(height: 10),
                   if (dayEvents.isEmpty)
                     const Card(
@@ -162,19 +191,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   else
                     ...dayEvents.map((event) => EventCard(
                           event: event,
+                          showActions: false,
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) => CommitmentFormScreen(existing: event)),
                           ),
                         )),
-                  const SizedBox(height: 20),
-                  const SectionHeader(title: 'Próximos compromisos', badge: 'PDA'),
-                  const SizedBox(height: 10),
-                  ...visibleUpcoming.map((event) => EventCard(
-                        event: event,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => CommitmentFormScreen(existing: event)),
-                        ),
-                      )),
                   const SizedBox(height: 80),
                 ],
               ),

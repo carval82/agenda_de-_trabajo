@@ -11,7 +11,7 @@ class EventCard extends StatelessWidget {
     super.key,
     required this.event,
     this.onTap,
-    this.showActions = true,
+    this.showActions = false,
   });
 
   final Commitment event;

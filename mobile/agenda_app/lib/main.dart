@@ -9,15 +9,23 @@ import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'services/api_service.dart';
 import 'services/connection_service.dart';
+import 'services/notification_handler.dart';
+import 'services/pda_assistant_service.dart';
 import 'services/reminder_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/ui_widgets.dart';
+
+final navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('es_ES');
   await ApiConfig.init();
   await ReminderService.instance.init();
+
+  NotificationHandler.instance.onAction = (id, action) async {
+    await PdaAssistantService.instance.handleNotificationAction(id, action);
+  };
 
   final api = ApiService();
   runApp(AgendaApp(api: api));
@@ -33,6 +41,7 @@ class AgendaApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => AgendaProvider(api),
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'Agenda de Trabajo',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.dark(),

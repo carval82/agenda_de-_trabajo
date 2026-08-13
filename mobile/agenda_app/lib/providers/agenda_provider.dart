@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/models.dart';
 import '../services/api_service.dart';
+import '../services/pda_assistant_service.dart';
 import '../services/reminder_service.dart';
 
 class AgendaProvider extends ChangeNotifier {
@@ -80,6 +81,7 @@ class AgendaProvider extends ChangeNotifier {
       for (final item in upcoming) {
         await ReminderService.instance.scheduleForCommitment(item);
       }
+      _syncAssistant();
     } catch (e) {
       final msg = e.toString();
       if (msg.contains('SocketException') || msg.contains('Failed host lookup') || msg.contains('Connection refused')) {
@@ -156,6 +158,48 @@ class AgendaProvider extends ChangeNotifier {
     await _api.deleteCommitment(id);
     await ReminderService.instance.cancelForCommitment(id);
     await loadData();
+  }
+
+  List<Commitment> todayAgenda() {
+    final now = DateTime.now();
+    return calendarEvents.where((e) {
+      if (!visibleCompanies.contains(e.companyId)) return false;
+      return e.startsAt.year == now.year && e.startsAt.month == now.month && e.startsAt.day == now.day;
+    }).toList()
+      ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+  }
+
+  void _syncAssistant() {
+    final map = <int, Commitment>{};
+    for (final e in calendarEvents) {
+      map[e.id] = e;
+    }
+    for (final e in upcoming) {
+      map[e.id] = e;
+    }
+    PdaAssistantService.instance.updateCommitments(map.values.toList());
+  }
+
+  Future<void> handleAssistantAction(int id, String action) async {
+    if (action == 'postpone_1h') {
+      Commitment? event;
+      for (final e in [...upcoming, ...calendarEvents]) {
+        if (e.id == id) {
+          event = e;
+          break;
+        }
+      }
+      if (event == null) return;
+      final start = DateTime.now().add(const Duration(hours: 1));
+      final duration = event.endsAt.difference(event.startsAt);
+      await postponeCommitment(event, start, start.add(duration));
+      return;
+    }
+
+    final status = action == 'in_progress' ? 'in_progress' : action;
+    if (['in_progress', 'completed', 'cancelled', 'scheduled'].contains(status)) {
+      await setStatus(id, status);
+    }
   }
 
   Future<String?> setStatus(int id, String status) async {
