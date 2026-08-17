@@ -86,16 +86,22 @@ Esto crea:
 
 ---
 
-## 6. Recordatorios (cron)
+## 6. Recordatorios y eventos permanentes (cron)
 
-Para avisos estilo PDA en servidor, crea un **Cron Job** en Railway:
+El script `scripts/start-railway.sh` arranca **`php artisan schedule:work`** en segundo plano al iniciar el servicio. No necesitas crear un cron manual en Railway.
+
+Tareas programadas:
+- `agenda:send-reminders` — cada minuto (avisos por email/BD)
+- `agenda:generate-recurring` — cada día a las 00:05 (pagos/facturas recurrentes)
+
+**Opcional:** si prefieres un servicio Cron separado en Railway:
 
 | Campo | Valor |
 |-------|--------|
 | Schedule | `* * * * *` |
 | Command | `php artisan schedule:run` |
 
-O un segundo servicio con el mismo repo y start command:
+O un segundo servicio con start command:
 
 ```bash
 php artisan schedule:work

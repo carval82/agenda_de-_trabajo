@@ -17,5 +17,8 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
+echo "==> Iniciando scheduler (recordatorios + eventos permanentes)..."
+php artisan schedule:work --no-interaction >> storage/logs/scheduler.log 2>&1 &
+
 echo "==> Servidor en puerto ${PORT:-8080}"
 exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}"
