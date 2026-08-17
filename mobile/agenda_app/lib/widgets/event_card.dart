@@ -55,6 +55,11 @@ class EventCard extends StatelessWidget {
                             Expanded(
                               child: Text(event.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                             ),
+                            if (event.isRecurring)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: Icon(Icons.repeat, size: 14, color: AppColors.intervereda.withOpacity(0.8)),
+                              ),
                             _Badge(text: badge, color: badgeColor),
                           ],
                         ),

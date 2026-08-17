@@ -1,3 +1,8 @@
+export 'app_user.dart';
+export 'day_mode.dart';
+
+export 'recurring_event.dart';
+
 class Company {
   Company({
     required this.id,
@@ -41,6 +46,8 @@ class Commitment {
     this.status = 'scheduled',
     this.reminderMinutes = const [15, 60],
     this.company,
+    this.recurringEventId,
+    this.isRecurring = false,
   });
 
   final int id;
@@ -55,6 +62,8 @@ class Commitment {
   final String status;
   final List<int> reminderMinutes;
   final Company? company;
+  final int? recurringEventId;
+  final bool isRecurring;
 
   factory Commitment.fromJson(Map<String, dynamic> json) {
     return Commitment(
@@ -75,6 +84,8 @@ class Commitment {
       company: json['company'] != null
           ? Company.fromJson(json['company'] as Map<String, dynamic>)
           : null,
+      recurringEventId: json['recurring_event_id'] as int?,
+      isRecurring: json['recurring_event_id'] != null,
     );
   }
 

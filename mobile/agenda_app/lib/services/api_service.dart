@@ -42,9 +42,41 @@ class ApiService {
       }),
     );
 
-    final data = _decode(response);
+    final data = _decode(response) as Map<String, dynamic>;
     _token = data['token'] as String;
     return data;
+  }
+
+  Future<Map<String, dynamic>> register(
+    String name,
+    String email,
+    String password,
+    String passwordConfirmation,
+  ) async {
+    final response = await _client.post(
+      Uri.parse('${ApiConfig.baseUrl}/register'),
+      headers: _headers,
+      body: jsonEncode({
+        'name': name,
+        'email': email,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+        'device_name': 'agenda_flutter',
+      }),
+    );
+
+    final data = _decode(response) as Map<String, dynamic>;
+    _token = data['token'] as String;
+    return data;
+  }
+
+  Future<AppUser> getMe() async {
+    final response = await _client.get(
+      Uri.parse('${ApiConfig.baseUrl}/me'),
+      headers: _headers,
+    );
+    final data = _decode(response) as Map<String, dynamic>;
+    return AppUser.fromJson(data);
   }
 
   Future<List<Company>> getCompanies() async {
@@ -88,6 +120,8 @@ class ApiService {
         clientName: props['client_name'] as String?,
         priority: props['priority'] as String? ?? 'medium',
         status: props['status'] as String? ?? 'scheduled',
+        recurringEventId: props['recurring_event_id'] as int?,
+        isRecurring: props['is_recurring'] as bool? ?? false,
         company: Company(
           id: props['company_id'] as int,
           name: props['company'] as String,
@@ -166,6 +200,52 @@ class ApiService {
     );
     final data = _decode(response) as Map<String, dynamic>;
     return Commitment.fromJson(data['commitment'] as Map<String, dynamic>);
+  }
+
+  Future<List<RecurringEvent>> getRecurringEvents() async {
+    final response = await _client.get(
+      Uri.parse('${ApiConfig.baseUrl}/recurring-events'),
+      headers: _headers,
+    );
+    final data = _decode(response) as List<dynamic>;
+    return data.map((e) => RecurringEvent.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<RecurringEvent> createRecurringEvent(RecurringEvent event) async {
+    final response = await _client.post(
+      Uri.parse('${ApiConfig.baseUrl}/recurring-events'),
+      headers: _headers,
+      body: jsonEncode(event.toJson()),
+    );
+    final data = _decode(response) as Map<String, dynamic>;
+    return RecurringEvent.fromJson(data['recurring_event'] as Map<String, dynamic>);
+  }
+
+  Future<RecurringEvent> updateRecurringEvent(RecurringEvent event) async {
+    final response = await _client.put(
+      Uri.parse('${ApiConfig.baseUrl}/recurring-events/${event.id}'),
+      headers: _headers,
+      body: jsonEncode(event.toJson()),
+    );
+    final data = _decode(response) as Map<String, dynamic>;
+    return RecurringEvent.fromJson(data['recurring_event'] as Map<String, dynamic>);
+  }
+
+  Future<void> deleteRecurringEvent(int id) async {
+    final response = await _client.delete(
+      Uri.parse('${ApiConfig.baseUrl}/recurring-events/$id'),
+      headers: _headers,
+    );
+    _decode(response);
+  }
+
+  Future<void> generateRecurringEvents() async {
+    final response = await _client.post(
+      Uri.parse('${ApiConfig.baseUrl}/recurring-events/generate'),
+      headers: _headers,
+      body: jsonEncode({}),
+    );
+    _decode(response);
   }
 
   dynamic _decode(http.Response response) {

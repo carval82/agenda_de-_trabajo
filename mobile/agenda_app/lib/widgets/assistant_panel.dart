@@ -9,11 +9,23 @@ class AssistantPanel extends StatelessWidget {
   const AssistantPanel({
     super.key,
     required this.todayEvents,
+    required this.dayMode,
+    required this.userName,
     required this.onSpeakDay,
+    required this.onVoiceTap,
+    required this.backgroundEnabled,
+    required this.onBackgroundChanged,
+    this.listening = false,
   });
 
   final List<Commitment> todayEvents;
+  final DayMode dayMode;
+  final String? userName;
   final VoidCallback onSpeakDay;
+  final VoidCallback onVoiceTap;
+  final bool backgroundEnabled;
+  final ValueChanged<bool> onBackgroundChanged;
+  final bool listening;
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +33,7 @@ class AssistantPanel extends StatelessWidget {
     final current = assistant.currentActivity();
     final next = assistant.nextActivity();
     final fmt = DateFormat('HH:mm');
+    final isRest = dayMode == DayMode.rest;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -29,15 +42,22 @@ class AssistantPanel extends StatelessWidget {
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                AppColors.lcdesign.withOpacity(0.25),
-                AppColors.intervereda.withOpacity(0.15),
-              ],
+              colors: isRest
+                  ? [
+                      const Color(0xFF1E3A5F).withOpacity(0.35),
+                      const Color(0xFF0F172A).withOpacity(0.5),
+                    ]
+                  : [
+                      AppColors.lcdesign.withOpacity(0.25),
+                      AppColors.intervereda.withOpacity(0.15),
+                    ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.lcdesign.withOpacity(0.3)),
+            border: Border.all(
+              color: isRest ? const Color(0xFF64748B).withOpacity(0.4) : AppColors.lcdesign.withOpacity(0.3),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,30 +67,81 @@ class AssistantPanel extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.lcdesign.withOpacity(0.2),
+                      color: (isRest ? const Color(0xFF64748B) : AppColors.lcdesign).withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.smart_toy_outlined, color: AppColors.lcdesign, size: 24),
+                    child: Icon(
+                      isRest ? Icons.nightlight_round : Icons.smart_toy_outlined,
+                      color: isRest ? const Color(0xFF94A3B8) : AppColors.lcdesign,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Asistente PDA', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-                        Text('Te aviso y pregunto según tu horario', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                        Text(
+                          userName != null ? 'Hola, ${userName!.split(' ').first}' : 'Tu asistente',
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                        ),
+                        Text(
+                          isRest
+                              ? 'Modo reposo — sin actividades hoy'
+                              : dayMode == DayMode.active
+                                  ? 'Día activo — te aviso según tu horario'
+                                  : 'Briefing matutino a las 7:00',
+                          style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                        ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Escuchar agenda de hoy',
-                    onPressed: onSpeakDay,
-                    icon: const Icon(Icons.volume_up_rounded, color: AppColors.intervereda),
+                  _ModeChip(mode: dayMode),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                title: const Text('Asistente en segundo plano', style: TextStyle(fontSize: 13)),
+                subtitle: const Text(
+                  'Responde por voz o agenda: "reunión mañana a las 3"',
+                  style: TextStyle(fontSize: 11, color: AppColors.muted),
+                ),
+                value: backgroundEnabled,
+                onChanged: onBackgroundChanged,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onSpeakDay,
+                      icon: const Icon(Icons.volume_up_rounded, size: 18),
+                      label: const Text('Escuchar día'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  FilledButton.icon(
+                    onPressed: onVoiceTap,
+                    icon: Icon(listening ? Icons.mic : Icons.mic_none_rounded, size: 18),
+                    label: Text(listening ? 'Escuchando…' : 'Hablar'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: listening ? AppColors.amber : AppColors.intervereda,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              if (current != null)
+              if (isRest)
+                const _NowCard(
+                  label: 'MODO REPOSO',
+                  title: 'Nada programado para hoy',
+                  subtitle: 'Descansa o di "agenda de hoy" para revisar de nuevo',
+                  color: Color(0xFF94A3B8),
+                  pulsing: false,
+                )
+              else if (current != null)
                 _NowCard(
                   label: current.status == 'in_progress' ? 'EN CURSO' : '¡ES AHORA!',
                   title: current.title,
@@ -90,20 +161,45 @@ class AssistantPanel extends StatelessWidget {
                 const _NowCard(
                   label: 'LIBRE',
                   title: 'Sin actividades pendientes',
-                  subtitle: 'Disfruta tu tiempo o agenda algo nuevo',
+                  subtitle: 'Agenda algo nuevo cuando quieras',
                   color: AppColors.muted,
                   pulsing: false,
                 ),
             ],
           ),
         ),
-        if (todayEvents.isNotEmpty) ...[
+        if (!isRest && todayEvents.isNotEmpty) ...[
           const SizedBox(height: 16),
           const Text('TU DÍA', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: AppColors.muted)),
           const SizedBox(height: 10),
           ...todayEvents.map((e) => _TimelineTile(event: e)),
         ],
       ],
+    );
+  }
+}
+
+class _ModeChip extends StatelessWidget {
+  const _ModeChip({required this.mode});
+
+  final DayMode mode;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = switch (mode) {
+      DayMode.rest => ('Reposo', const Color(0xFF64748B)),
+      DayMode.active => ('Activo', AppColors.intervereda),
+      DayMode.pending => ('7:00', AppColors.amber),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.5)),
+      ),
+      child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color)),
     );
   }
 }

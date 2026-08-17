@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\CompanyApiController;
 use App\Http\Controllers\CommitmentController;
+use App\Http\Controllers\RecurringEventController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,7 @@ Route::get('/health', function () {
 });
 
 Route::post('/login', [AuthApiController::class, 'login']);
+Route::post('/register', [AuthApiController::class, 'register']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthApiController::class, 'logout']);
@@ -44,4 +46,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/commitments/{commitment}/status', [CommitmentController::class, 'updateStatus']);
     Route::post('/commitments/{commitment}/postpone', [CommitmentController::class, 'postpone']);
     Route::delete('/commitments/{commitment}', [CommitmentController::class, 'destroy']);
+
+    Route::get('/recurring-events', [RecurringEventController::class, 'index']);
+    Route::post('/recurring-events', [RecurringEventController::class, 'store']);
+    Route::post('/recurring-events/generate', [RecurringEventController::class, 'generate']);
+    Route::put('/recurring-events/{recurringEvent}', [RecurringEventController::class, 'update']);
+    Route::delete('/recurring-events/{recurringEvent}', [RecurringEventController::class, 'destroy']);
 });

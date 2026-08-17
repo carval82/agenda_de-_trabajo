@@ -3,8 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/models.dart';
 import '../services/api_service.dart';
+import '../services/assistant_remote.dart';
+import '../services/background_assistant_service.dart';
 import '../services/pda_assistant_service.dart';
 import '../services/reminder_service.dart';
+import '../services/voice_service.dart';
 
 class AgendaProvider extends ChangeNotifier {
   AgendaProvider(this._api);
@@ -13,10 +16,15 @@ class AgendaProvider extends ChangeNotifier {
 
   bool loading = false;
   String? error;
+  AppUser? user;
   List<Company> companies = [];
   List<Commitment> upcoming = [];
   List<Commitment> calendarEvents = [];
   Set<int> visibleCompanies = {};
+  bool backgroundAssistantEnabled = false;
+  List<RecurringEvent> recurringEvents = [];
+
+  DayMode get dayMode => PdaAssistantService.instance.dayMode;
 
   Future<bool> restoreSession() async {
     final prefs = await SharedPreferences.getInstance();
@@ -38,17 +46,34 @@ class AgendaProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _api.login(email, password);
+      final data = await _api.login(email, password);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', _api.token!);
+      user = data['user'] != null ? AppUser.fromJson(data['user'] as Map<String, dynamic>) : null;
+      if (user != null) await AssistantRemote.cacheUserName(user!.name);
       await loadData();
     } catch (e) {
-      final msg = e.toString();
-      if (msg.contains('SocketException') || msg.contains('Failed host lookup') || msg.contains('Connection refused')) {
-        error = 'Sin conexión al servidor. Verifica que Laravel esté corriendo.';
-      } else {
-        error = msg;
-      }
+      error = _friendlyError(e);
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> register(String name, String email, String password, String passwordConfirmation) async {
+    loading = true;
+    error = null;
+    notifyListeners();
+
+    try {
+      final data = await _api.register(name, email, password, passwordConfirmation);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', _api.token!);
+      user = data['user'] != null ? AppUser.fromJson(data['user'] as Map<String, dynamic>) : null;
+      if (user != null) await AssistantRemote.cacheUserName(user!.name);
+      await loadData();
+    } catch (e) {
+      error = _friendlyError(e);
     } finally {
       loading = false;
       notifyListeners();
@@ -56,9 +81,11 @@ class AgendaProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    await BackgroundAssistantService.instance.setEnabled(false);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     _api.setToken(null);
+    user = null;
     companies = [];
     upcoming = [];
     calendarEvents = [];
@@ -70,6 +97,10 @@ class AgendaProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      user = await _api.getMe();
+      PdaAssistantService.instance.userName = user?.name;
+      if (user != null) await AssistantRemote.cacheUserName(user!.name);
+
       companies = await _api.getCompanies();
       visibleCompanies = companies.map((c) => c.id).toSet();
       upcoming = await _api.getUpcoming();
@@ -81,18 +112,117 @@ class AgendaProvider extends ChangeNotifier {
       for (final item in upcoming) {
         await ReminderService.instance.scheduleForCommitment(item);
       }
+
+      await ReminderService.instance.scheduleDailyMorningBriefing(
+        hour: PdaAssistantService.morningHour,
+        minute: PdaAssistantService.morningMinute,
+      );
+
+      await _api.generateRecurringEvents();
+      await loadRecurringEvents();
+
       _syncAssistant();
+      await PdaAssistantService.instance.evaluateDayModeFromEvents(todayAgenda());
+      await runMorningCheckIfNeeded();
+      backgroundAssistantEnabled = await BackgroundAssistantService.instance.isEnabled();
+      await BackgroundAssistantService.instance.ensureStartedIfEnabled();
     } catch (e) {
-      final msg = e.toString();
-      if (msg.contains('SocketException') || msg.contains('Failed host lookup') || msg.contains('Connection refused')) {
-        error = 'Sin conexión al servidor. Verifica que Laravel esté corriendo.';
-      } else {
-        error = msg;
-      }
+      error = _friendlyError(e);
     } finally {
       loading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> runMorningCheckIfNeeded() async {
+    await PdaAssistantService.instance.checkMorningIfNeeded(todayAgenda());
+    notifyListeners();
+  }
+
+  Future<void> runMorningRoutine() async {
+    await PdaAssistantService.instance.runMorningRoutine(todayAgenda(), name: user?.name);
+    notifyListeners();
+  }
+
+  Future<void> refreshAssistantState() async {
+    await PdaAssistantService.instance.evaluateDayModeFromEvents(todayAgenda());
+    notifyListeners();
+  }
+
+  Future<void> loadRecurringEvents() async {
+    try {
+      recurringEvents = await _api.getRecurringEvents();
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<String?> saveRecurringEvent(RecurringEvent event) async {
+    loading = true;
+    error = null;
+    notifyListeners();
+    try {
+      await _api.createRecurringEvent(event);
+      await _api.generateRecurringEvents();
+      await loadData();
+      return null;
+    } catch (e) {
+      error = _friendlyError(e);
+      return error;
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> updateRecurringEvent(RecurringEvent event) async {
+    loading = true;
+    error = null;
+    notifyListeners();
+    try {
+      await _api.updateRecurringEvent(event);
+      await _api.generateRecurringEvents();
+      await loadData();
+      return null;
+    } catch (e) {
+      error = _friendlyError(e);
+      return error;
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> deleteRecurringEvent(int id) async {
+    loading = true;
+    notifyListeners();
+    try {
+      await _api.deleteRecurringEvent(id);
+      await loadRecurringEvents();
+      await loadData();
+      return null;
+    } catch (e) {
+      error = _friendlyError(e);
+      return error;
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> setBackgroundAssistant(bool enabled) async {
+    if (enabled) {
+      final mic = await VoiceService.instance.ensureMicrophonePermission();
+      if (!mic) {
+        error = 'Se necesita permiso de micrófono para el asistente en segundo plano.';
+        notifyListeners();
+        return;
+      }
+    }
+
+    backgroundAssistantEnabled = enabled;
+    notifyListeners();
+    await BackgroundAssistantService.instance.setEnabled(enabled);
+    notifyListeners();
   }
 
   Future<void> loadCalendar(DateTime start, DateTime end) async {
@@ -146,7 +276,7 @@ class AgendaProvider extends ChangeNotifier {
       await loadData();
       return null;
     } catch (e) {
-      error = e.toString();
+      error = _friendlyError(e);
       return error;
     } finally {
       loading = false;
@@ -217,7 +347,7 @@ class AgendaProvider extends ChangeNotifier {
       await loadData();
       return null;
     } catch (e) {
-      error = e.toString();
+      error = _friendlyError(e);
       return error;
     } finally {
       loading = false;
@@ -236,11 +366,19 @@ class AgendaProvider extends ChangeNotifier {
       await loadData();
       return null;
     } catch (e) {
-      error = e.toString();
+      error = _friendlyError(e);
       return error;
     } finally {
       loading = false;
       notifyListeners();
     }
+  }
+
+  String _friendlyError(Object e) {
+    final msg = e.toString();
+    if (msg.contains('SocketException') || msg.contains('Failed host lookup') || msg.contains('Connection refused')) {
+      return 'Sin conexión al servidor. Verifica tu internet o el servidor.';
+    }
+    return msg;
   }
 }

@@ -5,6 +5,7 @@ import '../providers/agenda_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui_widgets.dart';
 import 'home_screen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,8 +15,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _email = TextEditingController(text: 'pcapacho24@gmail.com');
-  final _password = TextEditingController(text: 'anaval33');
+  final _email = TextEditingController();
+  final _password = TextEditingController();
 
   @override
   void dispose() {
@@ -45,10 +46,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: Column(
                   children: [
-                    const AppLogo(variant: AppLogoVariant.hero, height: 200),
-                    const SizedBox(height: 12),
-                    const AppLogo(variant: AppLogoVariant.compact, height: 44),
-                    const SizedBox(height: 20),
+                    const AppLogo(variant: AppLogoVariant.hero, height: 160),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Agenda PDA',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                    ),
+                    const Text(
+                      'Tu asistente personal de actividades',
+                      style: TextStyle(fontSize: 13, color: AppColors.muted),
+                    ),
+                    const SizedBox(height: 24),
                     Container(
                       padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
@@ -59,19 +67,41 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _feature(Icons.calendar_month, 'Calendario organizado'),
-                          _feature(Icons.block, 'Sin cruces de horario'),
-                          _feature(Icons.notifications_active, 'Recordatorios PDA'),
+                          _feature(Icons.wb_sunny_outlined, 'Briefing diario a las 7:00'),
+                          _feature(Icons.nightlight_round, 'Modo reposo si no hay tareas'),
+                          _feature(Icons.mic_none_rounded, 'Agenda por voz: "reunión mañana a las 3"'),
                           const SizedBox(height: 20),
-                          TextField(controller: _email, decoration: const InputDecoration(labelText: 'Correo', prefixIcon: Icon(Icons.email_outlined)), keyboardType: TextInputType.emailAddress),
+                          TextField(
+                            controller: _email,
+                            decoration: const InputDecoration(
+                              labelText: 'Correo',
+                              prefixIcon: Icon(Icons.email_outlined),
+                            ),
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.email],
+                          ),
                           const SizedBox(height: 12),
-                          TextField(controller: _password, decoration: const InputDecoration(labelText: 'Contraseña', prefixIcon: Icon(Icons.lock_outline)), obscureText: true),
+                          TextField(
+                            controller: _password,
+                            decoration: const InputDecoration(
+                              labelText: 'Contraseña',
+                              prefixIcon: Icon(Icons.lock_outline),
+                            ),
+                            obscureText: true,
+                            autofillHints: const [AutofillHints.password],
+                          ),
                           if (provider.error != null) ...[
                             const SizedBox(height: 12),
                             Container(
                               padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(color: Colors.red.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
-                              child: Text(provider.error!, style: const TextStyle(color: Colors.redAccent, fontSize: 13)),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                provider.error!,
+                                style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                              ),
                             ),
                           ],
                           const SizedBox(height: 18),
@@ -81,10 +111,21 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : () async {
                                     await provider.login(_email.text.trim(), _password.text);
                                     if (context.mounted && provider.error == null) {
-                                      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+                                      Navigator.of(context).pushReplacement(
+                                        MaterialPageRoute(builder: (_) => const HomeScreen()),
+                                      );
                                     }
                                   },
-                            child: Text(provider.loading ? 'Entrando...' : 'Entrar a la agenda'),
+                            child: Text(provider.loading ? 'Entrando...' : 'Entrar'),
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: provider.loading
+                                ? null
+                                : () => Navigator.of(context).push(
+                                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                                    ),
+                            child: const Text('Crear cuenta nueva'),
                           ),
                         ],
                       ),
@@ -107,7 +148,10 @@ class _LoginScreenState extends State<LoginScreen> {
           Container(
             width: 34,
             height: 34,
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.06), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Icon(icon, size: 18, color: AppColors.lcdesign),
           ),
           const SizedBox(width: 12),

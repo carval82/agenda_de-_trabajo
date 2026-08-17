@@ -4,16 +4,18 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../main.dart' show navigatorKey;
-import '../models/models.dart';
 import '../providers/agenda_provider.dart';
+import '../services/notification_handler.dart';
 import '../services/pda_assistant_service.dart';
 import '../services/reminder_service.dart';
+import '../services/voice_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/assistant_panel.dart';
 import '../widgets/event_card.dart';
 import '../widgets/ui_widgets.dart';
 import 'commitment_form_screen.dart';
 import 'login_screen.dart';
+import 'recurring_events_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,7 +27,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
-  bool _briefingDone = false;
+  bool _listening = false;
+  String? _voiceHint;
 
   @override
   void initState() {
@@ -45,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       PdaAssistantService.instance.startWatching();
+      context.read<AgendaProvider>().runMorningCheckIfNeeded();
     } else if (state == AppLifecycleState.paused) {
       PdaAssistantService.instance.stopWatching();
     }
@@ -52,20 +56,50 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _setupAssistant() async {
     await ReminderService.instance.requestPermissions();
+    if (!mounted) return;
     final provider = context.read<AgendaProvider>();
 
     PdaAssistantService.instance.attach(
       navigatorKey: navigatorKey,
       onAction: (id, action) => provider.handleAssistantAction(id, action),
     );
-
-    if (!_briefingDone && mounted) {
-      _briefingDone = true;
-      final today = provider.todayAgenda();
-      await PdaAssistantService.instance.dailyBriefing(today);
-    }
+    PdaAssistantService.instance.onDayModeChanged = () {
+      if (mounted) setState(() {});
+    };
 
     PdaAssistantService.instance.startWatching();
+
+    if (NotificationHandler.instance.pendingVoiceSession) {
+      final action = NotificationHandler.instance.pendingVoiceAction;
+      NotificationHandler.instance.clearPendingVoice();
+      if (action == 'status') {
+        await VoiceSessionRunner.speakStatus(provider: provider);
+      } else {
+        await VoiceSessionRunner.start(provider: provider);
+      }
+    }
+  }
+
+  Future<void> _handleVoice() async {
+    if (_listening) return;
+
+    setState(() {
+      _listening = true;
+      _voiceHint = 'Di: qué tengo hoy, estado, próximo…';
+    });
+
+    final provider = context.read<AgendaProvider>();
+    await VoiceSessionRunner.start(
+      provider: provider,
+      onPartial: (partial) {
+        if (mounted) setState(() => _voiceHint = 'Escuchando: "$partial"');
+      },
+    );
+
+    if (mounted) {
+      await provider.refreshAssistantState();
+      setState(() => _listening = false);
+    }
   }
 
   @override
@@ -73,6 +107,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final provider = context.watch<AgendaProvider>();
     final dayEvents = provider.eventsForDay(_selectedDay);
     final todayAgenda = provider.todayAgenda();
+    final dayMode = provider.dayMode;
 
     return Scaffold(
       appBar: AppBar(
@@ -84,7 +119,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Asistente PDA', style: TextStyle(fontSize: 16)),
+                  Text(
+                    provider.user?.name.split(' ').first ?? 'Asistente PDA',
+                    style: const TextStyle(fontSize: 16),
+                  ),
                   Text(
                     DateFormat('EEEE d MMMM', 'es').format(DateTime.now()),
                     style: const TextStyle(fontSize: 11, color: AppColors.muted),
@@ -97,9 +135,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         titleSpacing: 16,
         actions: [
           IconButton(
-            tooltip: 'Escuchar mi día',
-            onPressed: () => PdaAssistantService.instance.dailyBriefing(todayAgenda),
-            icon: const Icon(Icons.volume_up_rounded),
+            tooltip: 'Briefing del día',
+            onPressed: () => provider.runMorningRoutine(),
+            icon: const Icon(Icons.wb_sunny_outlined),
           ),
           IconButton(
             tooltip: 'Actualizar',
@@ -118,12 +156,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => CommitmentFormScreen(selectedDay: _selectedDay)),
-        ),
-        icon: const Icon(Icons.add),
-        label: const Text('Agendar'),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            heroTag: 'voice',
+            mini: true,
+            backgroundColor: _listening ? AppColors.amber : AppColors.lcdesign,
+            onPressed: _handleVoice,
+            child: Icon(_listening ? Icons.mic : Icons.mic_none_rounded),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            heroTag: 'add',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => CommitmentFormScreen(selectedDay: _selectedDay)),
+            ),
+            icon: const Icon(Icons.add),
+            label: const Text('Agendar'),
+          ),
+        ],
       ),
       body: provider.loading && provider.companies.isEmpty
           ? const Center(child: CircularProgressIndicator())
@@ -134,7 +187,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 children: [
                   AssistantPanel(
                     todayEvents: todayAgenda,
-                    onSpeakDay: () => PdaAssistantService.instance.dailyBriefing(todayAgenda),
+                    dayMode: dayMode,
+                    userName: provider.user?.name,
+                    listening: _listening,
+                    backgroundEnabled: provider.backgroundAssistantEnabled,
+                    onBackgroundChanged: (v) => provider.setBackgroundAssistant(v),
+                    onSpeakDay: () => provider.runMorningRoutine(),
+                    onVoiceTap: _handleVoice,
+                  ),
+                  if (_voiceHint != null) ...[
+                    const SizedBox(height: 8),
+                    Text(_voiceHint!, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+                  ],
+                  const SizedBox(height: 20),
+                  _PermanentEventsBanner(
+                    count: provider.recurringEvents.where((e) => e.isActive).length,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const RecurringEventsScreen()),
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Wrap(
@@ -146,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         label: company.name,
                         color: parseHexColor(company.color),
                         selected: active,
-                        icon: company.slug == 'lcdesign' ? Icons.code : Icons.wifi,
+                        icon: Icons.business_outlined,
                         onTap: () => provider.toggleCompany(company.id),
                       );
                     }).toList(),
@@ -185,7 +255,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     const Card(
                       child: Padding(
                         padding: EdgeInsets.all(24),
-                        child: Center(child: Text('Sin compromisos este día', style: TextStyle(color: AppColors.muted))),
+                        child: Center(
+                          child: Text('Sin compromisos este día', style: TextStyle(color: AppColors.muted)),
+                        ),
                       ),
                     )
                   else
@@ -196,10 +268,58 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             MaterialPageRoute(builder: (_) => CommitmentFormScreen(existing: event)),
                           ),
                         )),
-                  const SizedBox(height: 80),
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
+    );
+  }
+}
+
+class _PermanentEventsBanner extends StatelessWidget {
+  const _PermanentEventsBanner({required this.count, required this.onTap});
+
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.amber.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.repeat, color: AppColors.amber),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Recordatorios permanentes', style: TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                      count > 0
+                          ? '$count activo(s) · pagos, facturas y alertas recurrentes'
+                          : 'Pagos de facturas, cobros mensuales y más',
+                      style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: AppColors.muted),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

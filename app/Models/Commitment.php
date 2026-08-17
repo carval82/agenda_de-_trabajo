@@ -10,6 +10,8 @@ class Commitment extends Model
     protected $fillable = [
         'user_id',
         'company_id',
+        'recurring_event_id',
+        'occurrence_key',
         'title',
         'description',
         'location',
@@ -44,6 +46,11 @@ class Commitment extends Model
         return $this->belongsTo(Company::class);
     }
 
+    public function recurringEvent(): BelongsTo
+    {
+        return $this->belongsTo(RecurringEvent::class);
+    }
+
     public function isActive(): bool
     {
         return ! in_array($this->status, ['completed', 'cancelled'], true);
@@ -75,6 +82,8 @@ class Commitment extends Model
                 'location' => $this->location,
                 'client_name' => $this->client_name,
                 'description' => $this->description,
+                'is_recurring' => $this->recurring_event_id !== null,
+                'recurring_event_id' => $this->recurring_event_id,
             ],
         ];
     }

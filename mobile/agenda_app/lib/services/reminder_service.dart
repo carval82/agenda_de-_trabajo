@@ -18,6 +18,9 @@ class ReminderService {
 
   static const _channelId = 'agenda_reminders_alarm';
   static const _channelName = 'Alarmas PDA';
+  static const _assistantChannelId = 'assistant_background';
+  static const _assistantChannelName = 'Asistente en segundo plano';
+  static const assistantNotificationId = 777776;
   static const _allReminderMinutes = [5, 15, 30, 60, 120, 1440];
   static const _startSlot = 9999;
   static const _endSlot = 9998;
@@ -50,6 +53,16 @@ class ReminderService {
         playSound: true,
         enableVibration: true,
         enableLights: true,
+      ),
+    );
+
+    await androidPlugin?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _assistantChannelId,
+        _assistantChannelName,
+        description: 'Habla con el asistente sin abrir la app',
+        importance: Importance.high,
+        playSound: false,
       ),
     );
 
@@ -201,9 +214,113 @@ class ReminderService {
       'Te avisaré con voz cuando llegue la hora de cada actividad.',
       _details(
         'Prueba exitosa. El asistente está listo.',
-        jsonEncode({'id': 0, 'type': 'test'}),
+        jsonEncode({'type': 'test'}),
       ),
     );
+  }
+
+  /// Briefing diario a las 7:00 — pregunta qué hay hoy y activa modo reposo o día activo.
+  Future<void> scheduleDailyMorningBriefing({int hour = 7, int minute = 0}) async {
+    try {
+      await init();
+      await _plugin.cancel(888888);
+
+      var scheduled = tz.TZDateTime(
+        tz.local,
+        tz.TZDateTime.now(tz.local).year,
+        tz.TZDateTime.now(tz.local).month,
+        tz.TZDateTime.now(tz.local).day,
+        hour,
+        minute,
+      );
+      if (scheduled.isBefore(tz.TZDateTime.now(tz.local))) {
+        scheduled = scheduled.add(const Duration(days: 1));
+      }
+
+      await _plugin.zonedSchedule(
+        888888,
+        '🌅 Buenos días — Agenda PDA',
+        'Revisando qué tienes programado para hoy...',
+        scheduled,
+        _details(
+          'Tu asistente revisará la agenda del día.',
+          jsonEncode({'type': 'morning_briefing'}),
+        ),
+        payload: jsonEncode({'type': 'morning_briefing'}),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } catch (e, stack) {
+      debugPrint('ReminderService.scheduleDailyMorningBriefing: $e\n$stack');
+    }
+  }
+
+  /// Notificación persistente con botón Hablar — usable con app en segundo plano.
+  Future<void> showAssistantBackgroundNotification() async {
+    try {
+      await init();
+      await _plugin.show(
+        assistantNotificationId,
+        '🤖 Asistente PDA activo',
+        'Toca 🎤 Hablar para preguntar por voz (app en segundo plano)',
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            _assistantChannelId,
+            _assistantChannelName,
+            channelDescription: 'Asistente en segundo plano',
+            importance: Importance.high,
+            priority: Priority.high,
+            ongoing: true,
+            autoCancel: false,
+            icon: '@mipmap/ic_launcher',
+            category: AndroidNotificationCategory.service,
+            visibility: NotificationVisibility.public,
+            actions: const [
+              AndroidNotificationAction(
+                'voice',
+                '🎤 Hablar',
+                showsUserInterface: true,
+                cancelNotification: false,
+              ),
+              AndroidNotificationAction(
+                'status',
+                '📋 Estado',
+                showsUserInterface: false,
+                cancelNotification: false,
+              ),
+            ],
+          ),
+        ),
+        payload: jsonEncode({'type': 'voice_assistant'}),
+      );
+    } catch (e, stack) {
+      debugPrint('ReminderService.showAssistantBackgroundNotification: $e\n$stack');
+    }
+  }
+
+  Future<void> hideAssistantBackgroundNotification() async {
+    try {
+      await init();
+      await _plugin.cancel(assistantNotificationId);
+    } catch (e, stack) {
+      debugPrint('ReminderService.hideAssistantBackgroundNotification: $e\n$stack');
+    }
+  }
+
+  Future<void> showMorningSummaryNotification(String summary) async {
+    try {
+      await init();
+      await _plugin.show(
+        777778,
+        '🌅 Briefing del día',
+        summary,
+        _details(summary, jsonEncode({'type': 'morning_briefing'})),
+        payload: jsonEncode({'type': 'morning_briefing'}),
+      );
+    } catch (e, stack) {
+      debugPrint('ReminderService.showMorningSummaryNotification: $e\n$stack');
+    }
   }
 
   int _notificationId(int commitmentId, int slot) => commitmentId * 10000 + slot;
